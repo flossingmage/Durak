@@ -2,11 +2,13 @@ const express = require("express");
 const http = require("http");
 const socketIo = require("socket.io");
 const path = require("path");
+const favicon = require("serve-favicon");
 
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
 
+app.use(favicon(path.join(__dirname, "public", "favicon.ico")));
 app.use(express.static(path.join(__dirname, "public")));
 
 class Game {
@@ -16,6 +18,41 @@ class Game {
     this.players = [];
     this.maxPlayers = 2;
   }
+
+  createDeck() {
+    const suits = ["hearts", "diamonds", "clubs", "spades"];
+    const ranks = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
+
+    for (let suit of suits) {
+      for (let rank of ranks) {
+        const card = new Card(suit, rank, `${suit}-${rank}.png`);
+        this.deck.push(card);
+      }
+    }
+  }
+
+  shuffleDeck() {
+    for (let i = this.deck.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [this.deck[i], this.deck[j]] = [this.deck[j], this.deck[i]];
+    }
+  }
+
+  drawCard() {
+  return deck.pop();
+  }
+
+  // Only deal cards at the start of the game
+  dealCards() {
+    for (let player of this.players) {
+      player.hand = [];
+      for (let i = 0; i < 6; i++) {
+          player.hand.push(this.drawCard());
+      }
+      console.log(`Dealt cards to player ${player.name}:`, player.hand);
+    }
+  }
+
 
   playerJoin(socket, playerName) {
     if (this.players.length < this.maxPlayers) {
@@ -30,6 +67,13 @@ class Game {
       return player;
     }
     return null;
+  }
+
+  startGame() {
+    console.log(`Game ${this.id} is starting with players:`, this.players);
+    this.createDeck();
+    this.shuffleDeck();
+    this.dealCards();
   }
 }
 
@@ -98,6 +142,7 @@ io.on("connection", (socket) => {
       };
 
       io.to(game.id).emit("gameReady", gameData);
+      game.startGame();
     } else {
       socket.emit("waitingForPlayer", { gameId: game.id });
     }

@@ -11,6 +11,7 @@
   "description": "",
   "dependencies": {
     "express": "^5.1.0",
+    "serve-favicon": "^2.5.1",
     "socket.io": "^4.8.1",
     "sockets": "^0.4.2"
   }
