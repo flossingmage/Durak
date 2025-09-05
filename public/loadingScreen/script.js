@@ -29,6 +29,12 @@ socket.on("gameReady", (game) => {
   // Here you can update the UI to show the game is ready
 });
 
+socket.on("hand", (sHand) => {
+const hand = JSON.parse(sHand)
+console.log("your hand is");
+console.log(hand)
+});
+
 socket.on("disconnect", () => {
   console.log("Disconnected from server");
 });

@@ -99,13 +99,12 @@ class Game {
   }
 
   createDeck() {
-    const suits = ["hearts", "diamonds", "clubs", "spades"];
-    const ranks = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
+    const Suits = ["hearts", "diamonds", "clubs", "spades"];
+    const Ranks = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
 
-    for (let suit of suits) {
-      for (let rank of ranks) {
-        const card = new Card(suit, rank, `${suit}_${rank}.png`);
-        this.deck.push(card);
+    for (let Suit of Suits) {
+      for (let Rank of Ranks) {
+        this.deck.push({ suit: Suit, rank: Rank, img: `${Suit}_${Rank}.png` });
       }
     }
   }
@@ -152,19 +151,19 @@ class Game {
     return null;
   }
 
+  sendHands() {
+    console.log("sending hand");
+    this.players.forEach((player) => {
+      player.socket.emit("hand", JSON.stringify(player.hand));
+    });
+  }
+
   startGame() {
     console.log(`Game ${this.id} is starting with players:`, this.players);
     this.createDeck();
     this.shuffleDeck();
     this.dealCards();
     this.getTrump();
-  }
-}
-
-class Card {
-  constructor(suit, rank, img) {
-    this.suit = suit;
-    this.rank = rank;
-    this.img = img;
+    this.sendHands();
   }
 }
