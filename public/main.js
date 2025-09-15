@@ -9,8 +9,7 @@ const server = http.createServer(app);
 const io = socketIo(server);
 
 app.use(favicon(path.join(__dirname, "favicon.ico")));
-app.use(express.static(path.join(__dirname, "loadingScreen")));
-
+app.use(express.static(path.join(__dirname)));
 let games = new Map();
 
 io.on("connection", (socket) => {
@@ -79,7 +78,7 @@ io.on("disconnect", (socket) => {
 });
 
 app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "loadingScreen", "index.html"));
+  res.sendFile(path.join(__dirname, "index.html"));
 });
 
 const PORT = 3000;
@@ -104,7 +103,7 @@ class Game {
 
     for (let Suit of Suits) {
       for (let Rank of Ranks) {
-        this.deck.push({ suit: Suit, rank: Rank, img: `${Suit}_${Rank}.png` });
+        this.deck.push({ suit: Suit, rank: Rank, img: `cards/${Suit}_${Rank}.png`});
       }
     }
   }
@@ -154,7 +153,7 @@ class Game {
   sendHands() {
     console.log("sending hand");
     this.players.forEach((player) => {
-      player.socket.emit("hand", JSON.stringify(player.hand));
+      player.socket.emit("getHand", JSON.stringify(player.hand));
     });
   }
 

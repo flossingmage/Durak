@@ -1,8 +1,14 @@
+// import express from "express";
+// const app = express();
+// app.use(express.static('./cards'));
+
 const socket = io();
 let currentGame;
 let myId;
 
 const message = document.querySelector(".message");
+const handDiv = document.querySelector(".hand");
+
 
 socket.on("connect", () => {
   myId = socket.id;
@@ -26,13 +32,19 @@ socket.on("waitingForPlayer", (data) => {
 socket.on("gameReady", (game) => {
   message.textContent = `game is about to start with ${game.players.length} players.`;
   console.log(`Game ${game.id} is ready with players:`, game.players);
-  // Here you can update the UI to show the game is ready
 });
 
-socket.on("hand", (sHand) => {
+socket.on("getHand", (sHand) => {
 const hand = JSON.parse(sHand)
 console.log("your hand is");
 console.log(hand)
+handDiv.innerHTML = "";
+hand.forEach(card => {
+  const cardDiv = document.createElement('img')
+  cardDiv.src = card.img;
+  handDiv.appendChild(cardDiv)
+  
+});
 });
 
 socket.on("disconnect", () => {
