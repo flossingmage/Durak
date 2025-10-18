@@ -63,7 +63,6 @@ socket.on("defender", () => {
   console.log("You are the Defender");
 });
 
-
 // need to add more functionality to attack card.
 socket.on("cardPlayed", (card) => {
   console.log("Card played:", card);
@@ -80,13 +79,23 @@ socket.on("disconnect", () => {
 function playCard(card) {
   console.log("play card clicked");
   if (card.target === selectedCard) {
-  socket.emit("playCard", Hand.get(card.target));
-  Hand.delete(card.target);
-  card.target.remove();
+  socket.emit("playCard", Hand.get(card.target),myId);
   }else{
     selectedCard = card.target;
   }
 }
+
+socket.on("canPlay", (card) => {
+  console.log("can play card:", card);
+
+    for (let [cardDiv, storedCard] of Hand.entries()) {
+    if (storedCard.rank === card.rank && storedCard.suit === card.suit) {
+      Hand.delete(cardDiv); 
+      cardDiv.remove(); 
+      break;
+    }
+  }
+});
 
 // create a card element and return it
 function createCardElement(card) {

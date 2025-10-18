@@ -76,12 +76,12 @@ io.on("connection", (socket) => {
       socket.emit("waitingForPlayer", { gameId: game.id });
     }
 
-  socket.on("playCard", (card) => {
-    console.log(card);
-    emitToGame(socket.gameId, "cardPlayed", card);
-  });
+    socket.on("playCard", (card, playerSocketId) => {
+      console.log(card);
+      game.playCard(card, playerSocketId);
+    });
 
-  // Handle player disconnection
+    // Handle player disconnection
     socket.on("disconnect", () => {
       console.log(`Socket ${socket.id} disconnected`);
     });
@@ -106,8 +106,12 @@ class Game {
     this.id = id;
     this.deck = [];
     this.players = [];
-    this.maxPlayers = 2;
+    this.maxPlayers = 3;
     this.trump;
+    this.currentAttacker = null;
+    this.currentDefender = null;
+    this.cardsInPlay = [];
+    this.cardsAttacking = [];
   }
 
   createDeck() {
@@ -174,24 +178,51 @@ class Game {
     });
   }
 
-  // select the first attacker buy who has the lowest trump card. selects the defender as the person next to attacker. 
+  playCard(card, playerSocketId) {
+    if (this.canPlayCard(card, playerSocketId)) {
+      emitToGame(this.id, "cardPlayed", card);
+      this.cardsInPlay.push(card);
+      this.cardsAttacking.push(card);
+    }
+  }
+
+  canPlayCard(card, playerSocketId) {
+    const player = this.players.find((p) => p.socket.id === playerSocketId);
+    if (this.cardsInPlay.length === 0 && this.currentAttacker === player) {
+      player.socket.emit("canPlay", card);
+      return true;
+    } else if (this.cardsInPlay.length > 0 && this.currentDefender !== player) {
+      for (let playedCard of this.cardsInPlay) {
+        if (card.rank === playedCard.rank) {
+          player.socket.emit("canPlay", card);
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  // select the first attacker buy who has the lowest trump card. selects the defender as the person next to attacker.
   sentFirstAttackAndDefender() {
-    let firstAttacker = null;
     let cardLowest = null;
     for (let player of this.players) {
       for (let card of player.hand) {
         if (card.suit === this.trump) {
           if (!cardLowest || card.rank < cardLowest.rank) {
             cardLowest = card;
-            firstAttacker = player;
+            this.currentAttacker = player;
           }
         }
       }
     }
-    firstAttacker.socket.emit("attacker");
-    const defenderIndex = (this.players.indexOf(firstAttacker) + 1) % this.players.length;
-    const defender = this.players[defenderIndex];
-    defender.socket.emit("defender");
+    if (!this.currentAttacker) {
+      this.currentAttacker = this.players[0];
+    }
+    this.currentAttacker.socket.emit("attacker");
+    const defenderIndex =
+      (this.players.indexOf(this.currentAttacker) + 1) % this.players.length;
+    this.currentDefender = this.players[defenderIndex];
+    this.currentDefender.socket.emit("defender");
   }
 
   startGame() {
