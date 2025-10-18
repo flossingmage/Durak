@@ -174,6 +174,26 @@ class Game {
     });
   }
 
+  // select the first attacker buy who has the lowest trump card. selects the defender as the person next to attacker. 
+  sentFirstAttackAndDefender() {
+    let firstAttacker = null;
+    let cardLowest = null;
+    for (let player of this.players) {
+      for (let card of player.hand) {
+        if (card.suit === this.trump) {
+          if (!cardLowest || card.rank < cardLowest.rank) {
+            cardLowest = card;
+            firstAttacker = player;
+          }
+        }
+      }
+    }
+    firstAttacker.socket.emit("attacker");
+    const defenderIndex = (this.players.indexOf(firstAttacker) + 1) % this.players.length;
+    const defender = this.players[defenderIndex];
+    defender.socket.emit("defender");
+  }
+
   startGame() {
     console.log(`Game ${this.id} is starting with players:`, this.players);
     this.createDeck();
@@ -181,6 +201,7 @@ class Game {
     this.dealCards();
     this.getTrump();
     this.sendHands();
+    this.sentFirstAttackAndDefender();
   }
 }
 

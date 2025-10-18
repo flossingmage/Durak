@@ -2,6 +2,7 @@ const socket = io();
 
 let currentGame;
 let myId;
+let selectedCard;
 
 const Hand = new Map();
 
@@ -18,7 +19,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 socket.on("connect", () => {
   myId = socket.id;
-  message.textContent = "Connected to the server";
   console.log("Connected to server");
   console.log("My socket ID:", myId);
 
@@ -36,7 +36,6 @@ socket.on("waitingForPlayer", (data) => {
 });
 
 socket.on("gameReady", (game) => {
-  message.textContent = `game is about to start with ${game.players.length} players.`;
   console.log(`Game ${game.id} is ready with players:`, game.players);
 });
 
@@ -54,13 +53,21 @@ socket.on("getHand", (sHand) => {
   });
 });
 
+socket.on("attacker", () => {
+  message.textContent = "You are the Attacker";
+  console.log("You are the Attacker");
+});
+
+socket.on("defender", () => {
+  message.textContent = "You are the Defender";
+  console.log("You are the Defender");
+});
+
 
 // need to add more functionality to attack card.
 socket.on("cardPlayed", (card) => {
   console.log("Card played:", card);
-  message.textContent = `Card played: ${card.rank} of ${card.suit}`;
   const cardDiv = createCardElement(card);
- // cardDiv.addEventListener("click", (e) => playCard(e));
   attatckDiv.appendChild(cardDiv);
 });
 
@@ -72,10 +79,13 @@ socket.on("disconnect", () => {
 // Needs to get uppdated
 function playCard(card) {
   console.log("play card clicked");
-
+  if (card.target === selectedCard) {
   socket.emit("playCard", Hand.get(card.target));
   Hand.delete(card.target);
   card.target.remove();
+  }else{
+    selectedCard = card.target;
+  }
 }
 
 // create a card element and return it
