@@ -12,6 +12,8 @@ app.use(favicon(path.join(__dirname, "favicon.ico")));
 app.use(express.static(path.join(__dirname)));
 let games = new Map();
 
+//script.js
+
 io.on("connection", (socket) => {
   socket.on("joinGame", (playerName) => {
     let game;
@@ -34,8 +36,10 @@ io.on("connection", (socket) => {
 
     const player = game.playerJoin(socket, playerName);
 
+    // join the socket.io room for this game
     if (player) {
       socket.join(game.id);
+      socket.gameId = game.id;
 
       const playerData = {
         playerName: player.name,
@@ -54,6 +58,7 @@ io.on("connection", (socket) => {
       );
     }
 
+    // If the game is now full, start it
     if (game.players.length === game.maxPlayers) {
       const gameData = {
         id: game.id,
@@ -70,11 +75,17 @@ io.on("connection", (socket) => {
     } else {
       socket.emit("waitingForPlayer", { gameId: game.id });
     }
-  });
-});
 
-io.on("disconnect", (socket) => {
-  console.log(`Socket ${socket.id} disconnected`);
+  socket.on("playCard", (card) => {
+    console.log(card);
+    emitToGame(socket.gameId, "cardPlayed", card);
+  });
+
+  // Handle player disconnection
+    socket.on("disconnect", () => {
+      console.log(`Socket ${socket.id} disconnected`);
+    });
+  });
 });
 
 app.get("/", (req, res) => {
@@ -86,7 +97,9 @@ server.listen(PORT, () => {
   console.log(`Server running on port http://localhost:${PORT}`);
 });
 
-module.exports = app;
+function emitToGame(gameId, event, data) {
+  io.to(gameId).emit(event, data);
+}
 
 class Game {
   constructor(id) {
@@ -103,7 +116,11 @@ class Game {
 
     for (let Suit of Suits) {
       for (let Rank of Ranks) {
-        this.deck.push({ suit: Suit, rank: Rank, img: `cards/${Suit}_${Rank}.png`});
+        this.deck.push({
+          suit: Suit,
+          rank: Rank,
+          img: `cards/${Suit}_${Rank}.png`,
+        });
       }
     }
   }
@@ -166,3 +183,5 @@ class Game {
     this.sendHands();
   }
 }
+
+module.exports = app;

@@ -1,14 +1,20 @@
-// import express from "express";
-// const app = express();
-// app.use(express.static('./cards'));
-
 const socket = io();
+
 let currentGame;
 let myId;
 
-const message = document.querySelector(".message");
-const handDiv = document.querySelector(".hand");
+const Hand = new Map();
 
+let message;
+let handDiv;
+let attatckDiv;
+
+// Wait for the DOM to load before querying elements
+document.addEventListener("DOMContentLoaded", () => {
+  message = document.querySelector(".message");
+  handDiv = document.querySelector(".hand");
+  attatckDiv = document.querySelector(".attack");
+});
 
 socket.on("connect", () => {
   myId = socket.id;
@@ -35,18 +41,49 @@ socket.on("gameReady", (game) => {
 });
 
 socket.on("getHand", (sHand) => {
-const hand = JSON.parse(sHand)
-console.log("your hand is");
-console.log(hand)
-handDiv.innerHTML = "";
-hand.forEach(card => {
-  const cardDiv = document.createElement('img')
-  cardDiv.src = card.img;
-  handDiv.appendChild(cardDiv)
-  
+  const hand = JSON.parse(sHand);
+  console.log("your hand is");
+  console.log(hand);
+  handDiv.innerHTML = "";
+  hand.forEach((card) => {
+    const cardDiv = createCardElement(card);
+    cardDiv.addEventListener("click", (e) => playCard(e));
+    handDiv.appendChild(cardDiv);
+
+    Hand.set(cardDiv, card);
+  });
 });
+
+
+// need to add more functionality to attack card.
+socket.on("cardPlayed", (card) => {
+  console.log("Card played:", card);
+  message.textContent = `Card played: ${card.rank} of ${card.suit}`;
+  const cardDiv = createCardElement(card);
+ // cardDiv.addEventListener("click", (e) => playCard(e));
+  attatckDiv.appendChild(cardDiv);
 });
 
 socket.on("disconnect", () => {
   console.log("Disconnected from server");
 });
+
+// send a card off to the server
+// Needs to get uppdated
+function playCard(card) {
+  console.log("play card clicked");
+
+  socket.emit("playCard", Hand.get(card.target));
+  Hand.delete(card.target);
+  card.target.remove();
+}
+
+// create a card element and return it
+function createCardElement(card) {
+  const cardDiv = document.createElement("img");
+  cardDiv.src = card.img;
+  cardDiv.width = 121;
+  cardDiv.height = 170;
+  cardDiv.className = "card";
+  return cardDiv;
+}
