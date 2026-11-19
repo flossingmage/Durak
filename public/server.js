@@ -54,7 +54,7 @@ io.on("connection", (socket) => {
       });
 
       console.log(
-        `Player ${player.name} joined game ${game.id} game has ${game.players.length} players.`
+        `Player ${player.name} joined game ${game.id} game has ${game.players.length} players.`,
       );
     }
 
@@ -102,6 +102,7 @@ function emitToGame(gameId, event, data) {
 }
 
 class Game {
+  //TODO: add game current state, keep track the players hands
   constructor(id) {
     this.id = id;
     this.deck = [];
@@ -140,7 +141,7 @@ class Game {
     return this.deck.pop();
   }
 
-  // Only deal cards at the start of the game
+  // Only deal at the start of the game
   dealCards() {
     for (let player of this.players) {
       player.hand = [];
@@ -151,11 +152,14 @@ class Game {
     }
   }
 
+  // peek the last card in the deck to determine the trump suit
   getTrump() {
     this.trump = this.deck[this.deck.length - 1].suit;
     console.log(`Trump suit is ${this.trump}`);
   }
 
+  // adds player if there is space
+  // TODO: make sure the game didn't start
   playerJoin(socket, playerName) {
     if (this.players.length < this.maxPlayers) {
       const player = {
@@ -171,6 +175,7 @@ class Game {
     return null;
   }
 
+  // sends the players their hands
   sendHands() {
     console.log("sending hand");
     this.players.forEach((player) => {
@@ -178,6 +183,7 @@ class Game {
     });
   }
 
+  // TODO: make sure the card is in the players hands
   playCard(card, playerSocketId) {
     if (this.canPlayCard(card, playerSocketId)) {
       emitToGame(this.id, "cardPlayed", card);
@@ -202,8 +208,9 @@ class Game {
     return false;
   }
 
-  // select the first attacker buy who has the lowest trump card. selects the defender as the person next to attacker.
-  sentFirstAttackAndDefender() {
+  // select the first attacker by who has the lowest trump card. selects the defender as the person next to attacker.
+  //TODO: Implenent a reshuffle if there is no trump in starting hands.
+  sendFirstAttackAndDefender() {
     let cardLowest = null;
     for (let player of this.players) {
       for (let card of player.hand) {
@@ -232,7 +239,7 @@ class Game {
     this.dealCards();
     this.getTrump();
     this.sendHands();
-    this.sentFirstAttackAndDefender();
+    this.sendFirstAttackAndDefender();
   }
 }
 
